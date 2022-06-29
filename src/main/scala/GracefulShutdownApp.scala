@@ -1,6 +1,4 @@
-import cats.effect.IO._
-import cats.effect.concurrent.{Deferred, Ref}
-import cats.effect.{ExitCase, ExitCode, IO, IOApp}
+import cats.effect._
 import cats.implicits._
 import fs2.kafka._
 
@@ -47,7 +45,7 @@ trait GracefulShutdownApp extends IOApp {
         }.uncancelable
       } { case ((consumer, closeConsumer), exitCase) =>
         (exitCase match {
-          case ExitCase.Error(e) => handleError(e)
+          case Outcome.Errored(e) => handleError(e)
           case _ =>
             for {
               _ <- IO(println("Starting graceful shutdown"))

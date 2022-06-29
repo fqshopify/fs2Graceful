@@ -1,5 +1,4 @@
 import cats.effect.{IO, Resource}
-import cats.implicits._
 import fs2.Stream
 import fs2.kafka._
 import io.github.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
@@ -21,7 +20,7 @@ class GracefulShutdownAppTest extends CatsEffectSuite with EmbeddedKafka {
         Stream
           .emit("hello")
           .repeat
-          .covary
+          .covary[IO]
           .metered(1.second)
           .evalMap(v => producer.produce(ProducerRecords.one(ProducerRecord(topic, v, v))).flatten)
       }

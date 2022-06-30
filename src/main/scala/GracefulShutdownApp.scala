@@ -42,7 +42,7 @@ trait GracefulShutdownApp extends IOApp {
             case true  => stoppedDeferred.complete(result)
             case false => IO.pure(result).rethrow
           }
-        }.uncancelable
+        }.uncancelable.start.flatMap(_.joinWithNever)
       } { case ((consumer, closeConsumer), exitCase) =>
         (exitCase match {
           case Outcome.Errored(e) => handleError(e)
@@ -52,7 +52,7 @@ trait GracefulShutdownApp extends IOApp {
               _ <- gracefulShutdownStartedRef.set(true)
               _ <- consumer.stopConsuming
               stopResult <- stoppedDeferred.get
-                .timeoutTo(10.seconds, IO.pure(Left(new RuntimeException("Graceful shutdown timed out"))))
+                .timeoutTo(30.seconds, IO.pure(Left(new RuntimeException("Graceful shutdown timed out"))))
               _ <- stopResult match {
                 case Right(()) => IO(println("Succeeded in graceful shutdown"))
                 case Left(e)   => IO(println("Failed to shutdown gracefully")) >> IO.raiseError(e)

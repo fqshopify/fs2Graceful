@@ -4,9 +4,11 @@ import fs2.kafka._
 import io.github.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import munit.CatsEffectSuite
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class GracefulShutdownAppTest extends CatsEffectSuite with EmbeddedKafka {
+
+  override def munitTimeout: Duration = 60.seconds
 
   def produceHelloForever(brokers: String, topic: String): IO[Unit] = {
     KafkaProducer

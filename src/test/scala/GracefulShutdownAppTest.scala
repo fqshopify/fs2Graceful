@@ -3,8 +3,10 @@ import fs2.Stream
 import fs2.kafka._
 import io.github.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import munit.CatsEffectSuite
+import org.apache.kafka.common.TopicPartition
 
 import scala.concurrent.duration.{Duration, DurationInt}
+import scala.jdk.CollectionConverters.MapHasAsScala
 
 class GracefulShutdownAppTest extends CatsEffectSuite with EmbeddedKafka {
 
@@ -53,7 +55,19 @@ class GracefulShutdownAppTest extends CatsEffectSuite with EmbeddedKafka {
         _ <- IO(println("Cancelling task!"))
         _ <- fib2.cancel
         _ <- fib1.cancel
-      } yield ()
+        committedOffset <- IO.fromTry(
+          withAdminClient(
+            _.listConsumerGroupOffsets(_groupId)
+              .partitionsToOffsetAndMetadata()
+              .get()
+              .asScala
+              .map { case (tp, offsetResult) => tp -> offsetResult.offset() }
+              .toMap
+          )
+        )
+      } yield {
+        assertEquals(committedOffset, Map(new TopicPartition(_topic, 0) -> 9L))
+      }
     }
   }
 
